@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>MC Cognitive Blocks — 1.0.0-rc1</title>
+<title>MC Cognitive Blocks — 1.0.0-rc2-preview</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <style>
 :root {
@@ -548,6 +548,41 @@ body {
   .kbd-grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
   .kbd-grid input { min-width: 0; width: 100%; }
 }
+
+/* RC2 premium interaction layer: touch, presentation, trophies and kinetic feedback. */
+#challengerHud { display:none !important; }
+.premium-note { font-size:.72rem; opacity:.72; line-height:1.35; }
+#touchController {
+  display:none; width:min(680px,100%); margin:.75rem auto 0; padding:.6rem;
+  border:1px solid rgba(52,255,154,.36); border-radius:14px; background:rgba(0,18,12,.88);
+  box-shadow:0 0 22px rgba(52,255,154,.10); user-select:none; -webkit-user-select:none; touch-action:none;
+}
+.touch-pad-grid { display:grid; grid-template-columns:repeat(6,minmax(48px,1fr)); gap:.5rem; }
+.touch-control { min-height:64px; font-size:1rem; font-weight:800; touch-action:none; overscroll-behavior:contain; }
+.touch-control.primary-action { border-color:var(--pink); box-shadow:0 0 12px rgba(255,0,127,.18); }
+.touch-control.secondary-action { border-color:var(--purple); }
+body.touch-mode-forced #touchController { display:block; }
+body.touch-mode-forced #leftBtn, body.touch-mode-forced #rightBtn, body.touch-mode-forced #downBtn,
+body.touch-mode-forced #rotateBtn, body.touch-mode-forced #dropBtn, body.touch-mode-forced #holdBtn { display:none !important; }
+.trophy-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.65rem; }
+.trophy-card { padding:.75rem; border:1px solid rgba(255,255,255,.14); border-radius:10px; background:rgba(0,0,0,.28); }
+.trophy-card.unlocked { border-color:#ffd900; box-shadow:0 0 14px rgba(255,217,0,.16); }
+.trophy-icon { font-size:1.45rem; }
+.trophy-title { font-weight:900; margin:.2rem 0; }
+.trophy-progress { font-size:.72rem; opacity:.75; }
+#codeLensOutput { white-space:pre-wrap; font: .78rem/1.45 ui-monospace,SFMono-Regular,Consolas,monospace; max-height:52vh; overflow:auto; background:#00130c; padding:.85rem; border-radius:10px; border:1px solid rgba(52,255,154,.3); }
+@media (pointer:coarse), (max-width:900px) {
+  #touchController { display:block; }
+  #leftBtn,#rightBtn,#downBtn,#rotateBtn,#dropBtn,#holdBtn { display:none !important; }
+  .touch-pad-grid { grid-template-columns:repeat(3,minmax(70px,1fr)); }
+  .touch-control { min-height:70px; font-size:1.05rem; }
+}
+@media (max-width:600px) {
+  .title-area { margin-bottom:.35rem; }
+  .side-panel { gap:.55rem; }
+  #touchController { position:sticky; bottom:.25rem; z-index:20; backdrop-filter:blur(8px); }
+  .touch-control { min-height:62px; }
+}
 </style>
 </head>
 <body>
@@ -595,7 +630,7 @@ body {
           </div>
         </div>
 
-        <div>
+        <div id="challengerHud" aria-hidden="true">
           <div class="panel-title">Challenger CPU</div>
           <p id="cpuStatus" style="font-size:0.75rem;">Challenger CPU inactive · phase1g-v1</p>
           <p style="font-size:0.7rem;">Preview of the main CPU run</p>
@@ -651,6 +686,9 @@ body {
             <button class="btn" id="tutorialBtn">INSTRUCTIONS</button>
             <button class="btn" id="fullscreenBtn">FULLSCREEN</button>
             <button class="btn hidden" id="exitFullscreenBtn">EXIT FS</button>
+            <button class="btn" id="touchModeBtn">TOUCH CONTROLS</button>
+            <button class="btn" id="trophiesBtn">TROPHIES</button>
+            <button class="btn" id="codeLensBtn">CODE LENS</button>
             <button class="btn btn-primary" id="teacherPortalSidebarBtn">TEACHER PORTAL</button>
             <button class="btn" id="replayControlsBtn">REPLAY CONTROLS</button>
           </div>
@@ -658,13 +696,25 @@ body {
       </aside>
     </div>
 
+    <section id="touchController" aria-label="Touch gameplay controls">
+      <div class="touch-pad-grid">
+        <button class="btn touch-control" id="touchLeft" aria-label="Move left">◀ LEFT</button>
+        <button class="btn touch-control" id="touchDown" aria-label="Soft drop">▼ DOWN</button>
+        <button class="btn touch-control" id="touchRight" aria-label="Move right">RIGHT ▶</button>
+        <button class="btn touch-control secondary-action" id="touchHold" aria-label="Hold piece">HOLD</button>
+        <button class="btn touch-control secondary-action" id="touchRotate" aria-label="Rotate clockwise">ROTATE ↻</button>
+        <button class="btn touch-control primary-action" id="touchDrop" aria-label="Hard drop">HARD DROP</button>
+      </div>
+      <div class="premium-note" style="text-align:center;margin-top:.45rem;">Touch controls support press-and-hold movement. Use TOUCH CONTROLS to force this layout on a large touchscreen or Promethean board.</div>
+    </section>
+
     <!-- Modals -->
     <!-- Start Screen Modal (Main Menu) -->
     <div class="modal hidden" id="startModal" aria-modal="true" role="dialog">
       <div class="modal-content" style="max-width: 480px; text-align: center; border: 3px solid var(--jade); box-shadow: 0 0 25px var(--glow-color);">
         <div class="modal-title" style="font-size: 2.2rem; color: #fff; text-shadow: 0 0 15px var(--glow-color); letter-spacing: 0.15rem;">MC <span>COGNITIVE BLOCKS</span></div>
         <div class="modal-text" style="color: var(--pink); font-weight: bold; letter-spacing: 0.1rem; font-size: 0.85rem; margin-top: -0.4rem; margin-bottom: 1.5rem; text-transform: uppercase;">Arcade Edition</div>
-        <p id="releaseVersion">MC Cognitive Blocks · 1.0.0-rc1</p>
+        <p id="releaseVersion">MC Cognitive Blocks · 1.0.0-rc2-preview</p>
         <p style="font-size:0.75rem">Data stays in this browser on this device. Profile IDs, session times and gameplay observations appear in local records and exports. Use a classroom alias; export before clearing browser data. No accounts or background uploads.</p>
         
         <div style="display: flex; flex-direction: column; gap: 0.8rem; max-width: 320px; margin: 0 auto 1.5rem;">
@@ -674,6 +724,8 @@ body {
           <button class="btn btn-primary" id="startModalStartBtn" style="font-size: 1.0rem; padding: 0.75rem;">PLAY GAME</button>
           <button class="btn" id="startModalChallengesBtn" style="font-size: 0.9rem; padding: 0.6rem;">CHALLENGES</button>
           <button class="btn" id="startModalHighScoresBtn" style="font-size: 0.9rem; padding: 0.6rem;">HIGH SCORES</button>
+          <button class="btn" id="startModalTrophiesBtn" style="font-size: 0.9rem; padding: 0.6rem;">TROPHY CABINET</button>
+          <button class="btn" id="startModalCodeLensBtn" style="font-size: 0.9rem; padding: 0.6rem;">CODE LENS</button>
           <button class="btn" id="startModalSettingsBtn" style="font-size: 0.9rem; padding: 0.6rem;">SETTINGS</button>
           <button class="btn" id="startModalTutBtn" style="font-size: 0.9rem; padding: 0.6rem;">INSTRUCTIONS</button>
           <button class="btn" id="startModalTeacherBtn" style="font-size: 0.9rem; padding: 0.6rem; border-color: var(--panel-border); background: rgba(8, 25, 18, 0.45);">TEACHER PORTAL</button>
@@ -728,6 +780,28 @@ body {
         </div>
         <div style="display:flex; justify-content:center;">
           <button class="btn" id="highScoresCloseBtn" style="min-width: 120px;">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="trophiesModal" aria-modal="true" role="dialog">
+      <div class="modal-content" style="max-width:760px; text-align:left;">
+        <div class="modal-title">TROPHY CABINET</div>
+        <p class="modal-text">Achievements are stored locally on this browser. Career trophies do not automatically follow you to another device.</p>
+        <div id="trophySummary" class="premium-note" style="margin-bottom:.8rem;"></div>
+        <div id="trophyGrid" class="trophy-grid"></div>
+        <div style="display:flex;justify-content:center;margin-top:1rem;"><button class="btn btn-primary" id="trophiesCloseBtn">CLOSE</button></div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="codeLensModal" aria-modal="true" role="dialog">
+      <div class="modal-content" style="max-width:760px; text-align:left;">
+        <div class="modal-title">CODE LENS · LAST 10 SECONDS</div>
+        <p class="modal-text">Python concept translation generated from semantic gameplay events. This is not the literal JavaScript source that executed.</p>
+        <pre id="codeLensOutput">Start a human game, play for a few seconds, then open Code Lens.</pre>
+        <div style="display:flex;gap:.6rem;justify-content:center;margin-top:1rem;">
+          <button class="btn" id="codeLensRefreshBtn">REFRESH</button>
+          <button class="btn btn-primary" id="codeLensCloseBtn">CLOSE</button>
         </div>
       </div>
     </div>
@@ -1348,6 +1422,7 @@ const State = {
       this.levelMilestonesSeen = new Set();
       this.comboMilestonesSeen = new Set();
       this.leaderboardMilestonesSeen = new Set();
+      this.trophiesThisRun = [];
 
       this.activeCallouts = [];
       this.calloutQueue = [];
@@ -2301,7 +2376,7 @@ function dispatchGameAction(action, actor='human', source='keyboard') {
   const event={action,actor,source,pieceId:piece?.pieceId ?? null,...stamp,accepted,reason,cells};
   if(!telemetry.ended)telemetry.action(event,piece);
   const work=telemetry.buffer;telemetry.buffer=null;if(work)work.forEach(fn=>fn());
-  if(accepted && ['keyboard','button'].includes(source) && ['MOVE_LEFT','MOVE_RIGHT','ROTATE_CW'].includes(action))audioManager.triggerSFX(action==='ROTATE_CW'?'rotate':'move');
+  if(accepted && ['keyboard','button','touch','gamepad'].includes(source) && ['MOVE_LEFT','MOVE_RIGHT','ROTATE_CW'].includes(action))audioManager.triggerSFX(action==='ROTATE_CW'?'rotate':'move');
   if(telemetry.pendingFinish){const status=telemetry.pendingFinish;telemetry.pendingFinish=null;gameOver(status);}
   if(telemetry.pendingSuccessAlert){telemetry.pendingSuccessAlert=false;alert(ModeRuntime.successMessage());}
   if(['HARD_DROP','HOLD','PAUSE','RESUME'].includes(action))ClassroomStorage.checkpoint();
@@ -2315,7 +2390,7 @@ const telemetry = new Training.Telemetry();
 
 function getBaseGravity(level) {
   const curve = [
-    800, 720, 630, 550, 470, // Levels 1-5
+    700, 620, 550, 480, 420, // Levels 1-5: quicker RC2 opening ramp
     380, 310, 250, 200, 160, // Levels 6-10
     130, 110, 90,  80,  70,  // Levels 11-15
     60,  55,  50,  45,  40   // Levels 16-20
@@ -2394,6 +2469,7 @@ function triggerCallout(message, type) {
   const priorities = {
     'cabinet_champion': 7,
     'high_score': 6,
+    'trophy': 6,
     'perfect_clear': 5,
     'clear': 4,
     'level': 3,
@@ -2436,12 +2512,13 @@ function processCalloutQueue() {
         color = '#ffd900'; size = '2.2rem'; shake = true; glowClass = 'glow-gold'; break;
       case 'high_score':
         color = 'var(--jade)'; size = '2.0rem'; shake = true; glowClass = 'glow-jade'; break;
+      case 'trophy':
+        color = '#ffd900'; size = '2.0rem'; shake = true; glowClass = 'glow-gold'; break;
       case 'perfect_clear':
         color = '#00f0ff'; size = '2.0rem'; shake = true; glowClass = 'glow-cyan'; break;
       case 'clear':
-        if (callout.message.includes('TETRIS')) { color = 'var(--pink)'; size = '1.8rem'; shake = true; }
-        else if (callout.message.includes('T-SPIN')) { color = 'var(--purple)'; size = '1.8rem'; }
-        else { color = 'var(--accent)'; }
+        if (callout.message.includes('T-SPIN')) { color = 'var(--purple)'; size = '1.8rem'; }
+        else { color = 'var(--pink)'; size = '1.8rem'; shake = true; }
         break;
       case 'level':
         color = 'var(--accent)'; size = '1.8rem'; glowClass = 'glow-white'; break;
@@ -2550,6 +2627,7 @@ function checkScoreMilestones() {
       triggerCallout(m.message, "score");
     }
   });
+  checkRunTrophies();
 }
 
 function checkLeaderboardAchievements() {
@@ -2585,6 +2663,81 @@ function checkLeaderboardAchievements() {
       triggerCallout("NEW CABINET CHAMPION!", "cabinet_champion");
     }
   }
+}
+
+const FOUR_LINE_AFFIRMATIONS = [
+  'YOU ROCK!', 'NICE WORK!', 'KEEP GOING!', 'LOCKED IN!', 'GREAT FOCUS!',
+  'STRONG MOVE!', 'YOU\'VE GOT THIS!', 'KEEP BUILDING!', 'AMAZING CLEAR!', 'STAY SHARP!'
+];
+function fourLineAffirmation() {
+  const index = (Math.floor(store.lines / 4) + store.level + telemetry.totalLocks) % FOUR_LINE_AFFIRMATIONS.length;
+  return FOUR_LINE_AFFIRMATIONS[index];
+}
+
+const TrophySystem = {
+  key:'mc_cognitive_trophies_v1',
+  defs:[
+    {id:'combo10',icon:'🥉',title:'Chain Reaction',description:'Reach a 10-clear combo chain in one run.'},
+    {id:'combo25',icon:'🥈',title:'Flow State',description:'Reach a 25-clear combo chain in one run.'},
+    {id:'careerCombo100',icon:'🏆',title:'Combo Collector',description:'Complete 100 combo-linked clears across runs.'},
+    {id:'careerCombo1000',icon:'💎',title:'Combo Mastery',description:'Complete 1,000 combo-linked clears across runs.'},
+    {id:'fourLine10',icon:'🏆',title:'Four-Line Focus',description:'Complete 10 four-line clears across runs.'},
+    {id:'level10',icon:'🥇',title:'Double Digits',description:'Reach Level 10 in a run.'},
+    {id:'score100k',icon:'⭐',title:'Six Figures',description:'Score 100,000 points in a run.'},
+    {id:'perfect',icon:'✨',title:'Clean Slate',description:'Complete a Perfect Clear.'},
+    {id:'tspin',icon:'🧠',title:'Spatial Thinker',description:'Complete a T-Spin clear.'}
+  ],
+  empty(){return {unlocked:{},careerComboClears:0,fourLineClears:0};},
+  load(){
+    try{const raw=localStorage.getItem(this.key);if(!raw)return this.empty();const x=JSON.parse(raw);return {...this.empty(),...x,unlocked:{...(x.unlocked||{})}};}
+    catch{return this.empty();}
+  },
+  save(data){try{localStorage.setItem(this.key,JSON.stringify(data));return true;}catch{return false;}},
+  unlock(id){
+    const data=this.load();if(data.unlocked[id])return false;
+    const def=this.defs.find(d=>d.id===id);if(!def)return false;
+    data.unlocked[id]={at:new Date().toISOString()};this.save(data);
+    if(!store.trophiesThisRun.includes(id))store.trophiesThisRun.push(id);
+    triggerCallout('🏆 '+def.title.toUpperCase()+'!', 'trophy');
+    audioManager.triggerSFX('levelup');
+    return true;
+  },
+  progressClear(lines,tspin,perfect){
+    const data=this.load();
+    const combo=getDisplayComboCount();
+    if(combo>=2)data.careerComboClears=(data.careerComboClears||0)+1;
+    if(lines>=4)data.fourLineClears=(data.fourLineClears||0)+1;
+    this.save(data);
+    if(combo>=10)this.unlock('combo10');
+    if(combo>=25)this.unlock('combo25');
+    if(data.careerComboClears>=100)this.unlock('careerCombo100');
+    if(data.careerComboClears>=1000)this.unlock('careerCombo1000');
+    if(data.fourLineClears>=10)this.unlock('fourLine10');
+    if(store.level>=10)this.unlock('level10');
+    if(store.score>=100000)this.unlock('score100k');
+    if(perfect)this.unlock('perfect');
+    if(tspin)this.unlock('tspin');
+  },
+  render(){
+    const data=this.load(),grid=document.getElementById('trophyGrid');if(!grid)return;
+    grid.textContent='';
+    for(const def of this.defs){
+      const card=document.createElement('div');card.className='trophy-card'+(data.unlocked[def.id]?' unlocked':'');
+      const icon=document.createElement('div');icon.className='trophy-icon';icon.textContent=data.unlocked[def.id]?def.icon:'🔒';
+      const title=document.createElement('div');title.className='trophy-title';title.textContent=def.title;
+      const desc=document.createElement('div');desc.className='premium-note';desc.textContent=def.description;
+      card.append(icon,title,desc);
+      if(data.unlocked[def.id]){const when=document.createElement('div');when.className='trophy-progress';when.textContent='Unlocked '+new Date(data.unlocked[def.id].at).toLocaleDateString();card.appendChild(when);}
+      grid.appendChild(card);
+    }
+    const unlocked=this.defs.filter(d=>data.unlocked[d.id]).length;
+    document.getElementById('trophySummary').textContent=`${unlocked} / ${this.defs.length} unlocked · ${data.careerComboClears||0} career combo-linked clears · ${data.fourLineClears||0} four-line clears`;
+  }
+};
+
+function checkRunTrophies(){
+  if(store.level>=10)TrophySystem.unlock('level10');
+  if(store.score>=100000)TrophySystem.unlock('score100k');
 }
 
 function checkComboMilestones() {
@@ -2757,6 +2910,7 @@ const Audio = {
       this.bgmTimer = 0;
       this.bgmStep = 0;
       this.noiseBuffer = null;
+      this.lastLevel = null;
     }
     init() {
       if (!this.manager.ctx || this.noiseBuffer) return;
@@ -2767,6 +2921,15 @@ const Audio = {
         data[i] = Math.random() * 2 - 1;
       }
     }
+    levelRatio() {
+      const shifts=[0,2,-3,5,-5,7,-7,3];
+      return Math.pow(2, shifts[(Math.max(1,store.level)-1)%shifts.length] / 12);
+    }
+    playLevelTone(freq,type,duration,gain,endFreq=null) {
+      const ratio=this.levelRatio();
+      return this.manager.playTone(freq*ratio,type,duration,gain,endFreq===null?null:endFreq*ratio);
+    }
+    playLevelChord(root,type,duration,gain) { return this.manager.playPowerChord(root*this.levelRatio(),type,duration,gain); }
     playPercussion(type) {
       if (!this.manager.ctx || this.manager.ctx.state === 'suspended') return;
       
@@ -2828,8 +2991,9 @@ const Audio = {
       const osc = this.manager.ctx.createOscillator();
       const gain = this.manager.ctx.createGain();
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq, this.manager.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(freq * 1.008, this.manager.ctx.currentTime + 0.3);
+      const tuned=freq*this.levelRatio();
+      osc.frequency.setValueAtTime(tuned, this.manager.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(tuned * 1.008, this.manager.ctx.currentTime + 0.3);
       
       gain.gain.setValueAtTime(0, this.manager.ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.07, this.manager.ctx.currentTime + 0.08);
@@ -2850,8 +3014,10 @@ const Audio = {
       const bgmToggle = document.getElementById('optBGM');
       if (!bgmToggle.checked || store.paused || store.gameOver || !store.gameStarted) return;
       
-      const baseBPM = 120;
-      const bpm = Math.min(175, baseBPM * (1 + (store.level - 1) * 0.02));
+      const level=Math.max(1,store.level);
+      if(this.lastLevel!==level){this.lastLevel=level;this.bgmStep=(level*11)%64;}
+      const baseBPM = 124;
+      const bpm = Math.min(182, baseBPM * (1 + (level - 1) * 0.022));
       const stepDuration = 15000 / bpm;
       
       this.bgmTimer += dt;
@@ -2861,7 +3027,6 @@ const Audio = {
         const step = this.bgmStep % 64;
         const bar = Math.floor(step / 16);
         const beat = step % 16;
-        const level = store.level;
         
         if (level <= 3) {
           // --- LEVEL BAND 1: Levels 1-3 (Warm-Up) ---
@@ -2876,12 +3041,12 @@ const Audio = {
           if (beat === 0 || beat === 8) this.playPercussion('kick');
           
           if (beat % 4 === 0) {
-            this.manager.playTone(current.root, 'sine', 0.4, 0.05);
+            this.playLevelTone(current.root, 'sine', 0.4, 0.05);
           }
           if (beat % 2 === 0) {
             const noteIndex = (beat / 2) % 4;
             const freq = current.notes[noteIndex] * 2;
-            this.manager.playTone(freq, 'sine', 0.25, 0.03);
+            this.playLevelTone(freq, 'sine', 0.25, 0.03);
             this.playSynthLead(freq);
           }
         }
@@ -2899,13 +3064,13 @@ const Audio = {
           if (beat === 4 || beat === 12) this.playPercussion('hihat');
           
           if (beat === 0 || beat === 8) {
-            this.manager.playPowerChord(current.root, 'triangle', 0.35, 0.04);
+            this.playLevelChord(current.root, 'triangle', 0.35, 0.04);
           }
           
           if (beat % 2 === 0) {
             const noteIndex = (beat / 2) % 4;
             const freq = current.notes[noteIndex] * 2;
-            this.manager.playTone(freq, 'triangle', 0.18, 0.035);
+            this.playLevelTone(freq, 'triangle', 0.18, 0.035);
             this.playSynthLead(freq);
           }
         }
@@ -2924,12 +3089,12 @@ const Audio = {
           if (beat % 4 === 2) this.playPercussion('hihat');
           
           if (beat % 2 === 0) {
-            this.manager.playTone(current.root, 'triangle', 0.15, 0.045);
+            this.playLevelTone(current.root, 'triangle', 0.15, 0.045);
           }
           
           const melodyNotes = [293.66, 329.63, 349.23, 392.00, 440.00, 392.00, 440.00, 523.25];
           const freq = melodyNotes[beat % 8] * 1.5;
-          this.manager.playTone(freq, 'sine', 0.1, 0.025);
+          this.playLevelTone(freq, 'sine', 0.1, 0.025);
           this.playSynthLead(freq);
         }
         else if (level <= 12) {
@@ -2947,7 +3112,7 @@ const Audio = {
           if (beat % 2 === 1) this.playPercussion('hihat');
           
           if (beat % 2 === 0) {
-            this.manager.playTone(currentRoot, 'square', 0.12, 0.035);
+            this.playLevelTone(currentRoot, 'square', 0.12, 0.035);
           }
           
           const melody = [
@@ -2958,7 +3123,7 @@ const Audio = {
           ];
           const melNote = melody[step];
           if (melNote > 0) {
-            this.manager.playTone(melNote, 'triangle', 0.22, 0.03);
+            this.playLevelTone(melNote, 'triangle', 0.22, 0.03);
             this.playSynthLead(melNote);
           }
         }
@@ -2977,14 +3142,14 @@ const Audio = {
           this.playPercussion('hihat');
           
           const bassNote = current.notes[beat % 4] / 2;
-          this.manager.playTone(bassNote, 'square', 0.1, 0.045);
+          this.playLevelTone(bassNote, 'square', 0.1, 0.045);
           
           const melody = [
             329.63, 392.00, 440.00, 493.88, 392.00, 440.00, 493.88, 587.33,
             493.88, 587.33, 659.25, 739.99, 659.25, 587.33, 493.88, 392.00
           ];
           const freq = melody[beat] * 1.5;
-          this.manager.playTone(freq, 'sawtooth', 0.12, 0.025);
+          this.playLevelTone(freq, 'sawtooth', 0.12, 0.025);
           this.playSynthLead(freq);
         }
         else {
@@ -3001,16 +3166,16 @@ const Audio = {
           if (beat === 4 || beat === 12 || beat === 13 || beat === 15) this.playPercussion('snare');
           this.playPercussion('hihat');
           
-          this.manager.playTone(current.root, 'sawtooth', 0.08, 0.05);
+          this.playLevelTone(current.root, 'sawtooth', 0.08, 0.05);
           
           const arpNote = current.notes[beat % 4] * 2;
-          this.manager.playTone(arpNote, 'sawtooth', 0.06, 0.022);
+          this.playLevelTone(arpNote, 'sawtooth', 0.06, 0.022);
           this.playSynthLead(arpNote);
           
           const leadRun = [783.99, 880.00, 932.33, 1046.50, 932.33, 880.00, 783.99, 698.46];
           if (beat % 2 === 0) {
             const freq = leadRun[(beat / 2) % 8];
-            this.manager.playTone(freq, 'square', 0.12, 0.025);
+            this.playLevelTone(freq, 'square', 0.12, 0.025);
           }
         }
         
@@ -3214,6 +3379,7 @@ const Rendering = {
     constructor() {
       this.particles = [];
       this.trails = [];
+      this.impacts = [];
     }
     spawnRowParticles(y, colorClass) {
       if(UI.Motion.reduced())return;
@@ -3238,6 +3404,12 @@ const Rendering = {
     spawnHardDropFX(p, startY, endY) {
       if(UI.Motion.reduced())return;
       let colorClass = p.class;
+      let resolvedColor = Core.Piece.COLOR_MAP[colorClass] || '#fff';
+      if (resolvedColor.startsWith('var(')) {
+        const varName = resolvedColor.slice(4, -1).split(',')[0].trim();
+        resolvedColor = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#fff';
+      }
+      this.impacts.push({x:(p.x+p.shape[0].length/2)*store.cellSize,y:(endY+p.shape.length)*store.cellSize,life:1,color:resolvedColor});
       for (let py = 0; py < p.shape.length; py++) {
         for (let px = 0; px < p.shape[py].length; px++) {
           if (p.shape[py][px]) {
@@ -3245,16 +3417,13 @@ const Rendering = {
               x: p.x + px,
               startY: startY + py,
               endY: endY + py,
-              life: 1.0
+              life: 1.0,
+              color: resolvedColor
             });
             
             // Splash particles at the bottom landing point
-            let color = Core.Piece.COLOR_MAP[colorClass] || '#fff';
-            if (color.startsWith('var(')) {
-              const varName = color.slice(4, -1).split(',')[0].trim();
-              color = getComputedStyle(document.documentElement).getPropertyValue(varName) || '#fff';
-            }
-            for (let i = 0; i < 3; i++) {
+            let color = resolvedColor;
+            for (let i = 0; i < 6; i++) {
               this.particles.push({
                 x: (p.x + px) * store.cellSize + store.cellSize / 2,
                 y: (endY + py) * store.cellSize + store.cellSize / 2,
@@ -3272,17 +3441,31 @@ const Rendering = {
       if (UI.Motion.reduced()) {
         this.particles = [];
         this.trails = [];
+        this.impacts = [];
         return;
       }
       ctx.globalCompositeOperation = 'source-over';
       
-      // Update Hard drop light beams
+      // Update kinetic hard-drop beams: colored shell + bright core.
       for (let i = this.trails.length - 1; i >= 0; i--) {
         let t = this.trails[i];
-        ctx.fillStyle = `rgba(255, 255, 255, ${t.life * 0.2})`;
-        ctx.fillRect(t.x * store.cellSize + 3, t.startY * store.cellSize, store.cellSize - 6, (t.endY - t.startY) * store.cellSize);
-        t.life -= dt * 0.0065;
+        const h=(t.endY-t.startY)*store.cellSize;
+        ctx.save();
+        ctx.globalAlpha=Math.max(0,t.life);
+        ctx.shadowBlur=18;ctx.shadowColor=t.color || 'var(--pink)';
+        ctx.fillStyle=t.color || '#ff2aa3';
+        ctx.fillRect(t.x*store.cellSize+2,t.startY*store.cellSize,store.cellSize-4,h);
+        ctx.globalAlpha=Math.max(0,t.life*.9);ctx.shadowBlur=8;ctx.fillStyle='#fff';
+        ctx.fillRect(t.x*store.cellSize+store.cellSize*.36,t.startY*store.cellSize,store.cellSize*.28,h);
+        ctx.restore();
+        t.life -= dt * 0.008;
         if (t.life <= 0) this.trails.splice(i, 1);
+      }
+      for(let i=this.impacts.length-1;i>=0;i--){
+        const hit=this.impacts[i],radius=(1-hit.life)*store.cellSize*2.2+4;
+        ctx.save();ctx.globalAlpha=Math.max(0,hit.life);ctx.strokeStyle=hit.color;ctx.lineWidth=3;ctx.shadowBlur=16;ctx.shadowColor=hit.color;
+        ctx.beginPath();ctx.ellipse(hit.x,Math.min(hit.y,board.height*store.cellSize-3),radius,radius*.32,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+        hit.life-=dt*.0048;if(hit.life<=0)this.impacts.splice(i,1);
       }
       
       // Update floating sparks
@@ -4812,7 +4995,7 @@ function lockPiece() {
     checkComboMilestones();
     if (clearedGarbage) triggerCallout('SURVIVAL!', 'clear');
     if (rows.length >= 4) {
-      triggerCallout('TETRIS!', 'clear');
+      triggerCallout(fourLineAffirmation(), 'clear');
       audioManager.triggerSFX('tetris');
     } else {
       audioManager.triggerSFX('clear');
@@ -4820,6 +5003,7 @@ function lockPiece() {
     }
     rows.forEach(y => effects.spawnRowParticles(y, piece.class));
     if (perfect) triggerCallout('PERFECT CLEAR!', 'perfect_clear');
+    TrophySystem.progressClear(rows.length,tspin,perfect);
     if (continuedBackToBack) triggerCallout('BACK-TO-BACK!', 'clear');
     checkScoreMilestones();
     checkLeaderboardAchievements();
@@ -5006,6 +5190,7 @@ function advanceGameFrame(ts, effectiveDt=null) {
       if (owner !== lifecycle.runId) return;
       if (!canAdvanceGameplay()) { scheduleGameFrame(); return; }
       
+      GamepadInput.update();
       // Update ambient models
       leftPanelAmbient.update(dt);
       rightPanelAmbient.update(dt);
@@ -5382,6 +5567,105 @@ document.addEventListener('focusin',e=>{
   if(UI.Input.context(e)!=='GAMEPLAY')releaseGameplayInput();
 });
 document.addEventListener('pointercancel',()=>releaseGameplayInput());
+
+const CodeLens = {
+  actionLine(event){
+    const prefix=event.accepted?'':'# BLOCKED: '+(event.reason||'action unavailable')+'\n';
+    const code={
+      MOVE_LEFT:'if can_move_left:\n    block_x -= 1',
+      MOVE_RIGHT:'if can_move_right:\n    block_x += 1',
+      SOFT_DROP_STEP:'if can_move_down:\n    block_y += 1',
+      SOFT_DROP_START:'# soft-drop input held',
+      SOFT_DROP_END:'# soft-drop input released',
+      ROTATE_CW:'if can_rotate:\n    rotation = (rotation + 1) % 4',
+      HARD_DROP:'while can_move_down:\n    block_y += 1\nlock_piece()',
+      HOLD:'hold_piece, current_piece = current_piece, hold_piece',
+      PAUSE:'game_paused = True',RESUME:'game_paused = False'
+    }[event.action] || '# '+event.action;
+    return prefix+code;
+  },
+  render(){
+    const out=document.getElementById('codeLensOutput');if(!out)return;
+    if(!telemetry.meta){out.textContent='Start a human game, play for a few seconds, then open Code Lens.';return;}
+    telemetry.clock();const cutoff=Math.max(0,telemetry.activeDurationMs-10000);
+    const events=telemetry.events.filter(e=>e.activeMs>=cutoff && ['action','spawn','clear','lock'].includes(e.type)).slice(-24);
+    if(!events.length){out.textContent='No semantic gameplay events in the last 10 active seconds.';return;}
+    out.textContent=events.map(e=>{
+      const t=((e.activeMs||0)/1000).toFixed(1)+'s';
+      if(e.type==='action')return `[${t}] ${e.action}${e.accepted?'':' (rejected)'}\n${this.actionLine(e)}`;
+      if(e.type==='spawn')return `[${t}] SPAWN ${e.pieceType}\ncurrent_piece = next_piece()`;
+      if(e.type==='lock')return `[${t}] LOCK\nboard = lock_piece(board, current_piece)`;
+      if(e.type==='clear')return `[${t}] CLEAR ${e.lines} line(s)\nfull_rows = find_full_rows(board)\nboard = clear_rows(board, full_rows)`;
+      return '';
+    }).join('\n\n');
+  },
+  open(){this.render();UI.ModalManager.show('codeLensModal');}
+};
+
+const TouchInput = {
+  forced:false,
+  active:new Map(),
+  toggle(){this.forced=!document.body.classList.contains('touch-mode-forced');document.body.classList.toggle('touch-mode-forced',this.forced);document.getElementById('touchModeBtn').textContent=this.forced?'HIDE TOUCH CONTROLS':'TOUCH CONTROLS';},
+  press(action,el,e){
+    if(!canAcceptGameplayAction() && !['PAUSE','RESUME'].includes(action))return;
+    e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch{}
+    telemetry.physical('touch',{type:'pointerdown',action,pointerType:e.pointerType||'touch'});
+    this.active.set(e.pointerId,{action,el});
+    if(action==='MOVE_LEFT'||action==='MOVE_RIGHT'){
+      const result=dispatchAction(action,'human','touch');if(result.accepted){store.inputState[action==='MOVE_LEFT'?'left':'right']=true;store.activeDir=action==='MOVE_LEFT'?-1:1;store.dasTimer=0;store.arrTimer=0;}
+    } else if(action==='SOFT_DROP_START') dispatchAction(action,'human','touch');
+    else dispatchAction(action,'human','touch');
+  },
+  release(pointerId,cancelled=false){
+    const item=this.active.get(pointerId);if(!item)return;this.active.delete(pointerId);const {action}=item;
+    if(action==='SOFT_DROP_START' && store.downHeld){if(canAcceptGameplayAction())dispatchAction('SOFT_DROP_END','human','touch');store.downHeld=false;}
+    if(action==='MOVE_LEFT'||action==='MOVE_RIGHT'){
+      const dir=action==='MOVE_LEFT'?-1:1;store.inputState[dir===-1?'left':'right']=false;
+      if(store.activeDir===dir){store.activeDir=store.inputState[dir===-1?'right':'left']?-dir:null;store.dasTimer=0;store.arrTimer=0;}
+    }
+    if(!cancelled)telemetry.physical('touch',{type:'pointerup',action});
+  },
+  bind(id,action){
+    const el=document.getElementById(id);if(!el)return;
+    el.addEventListener('pointerdown',e=>this.press(action,el,e));
+    for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,e=>this.release(e.pointerId,type!=='pointerup'));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+  },
+  init(){
+    this.bind('touchLeft','MOVE_LEFT');this.bind('touchRight','MOVE_RIGHT');this.bind('touchDown','SOFT_DROP_START');
+    this.bind('touchRotate','ROTATE_CW');this.bind('touchDrop','HARD_DROP');this.bind('touchHold','HOLD');
+  }
+};
+
+const GamepadInput = {
+  prev:{},activeHorizontal:null,downHeld:false,
+  edge(gp,index){const pressed=!!gp.buttons[index]?.pressed,was=!!this.prev[index];this.prev[index]=pressed;return {pressed,down:pressed&&!was,up:!pressed&&was};},
+  update(){
+    const gp=Array.from(navigator.getGamepads?.()||[]).find(Boolean);if(!gp||telemetry.meta?.actor!=='human'||ReplayRuntime.playing)return;
+    const left=this.edge(gp,14),right=this.edge(gp,15),down=this.edge(gp,13),rotate=this.edge(gp,0),drop=this.edge(gp,1),hold=this.edge(gp,4),pause=this.edge(gp,9);
+    const pressHorizontal=(action,dir)=>{telemetry.physical('gamepad',{type:'buttondown',action});const r=dispatchAction(action,'human','gamepad');if(r.accepted){store.inputState[dir<0?'left':'right']=true;store.activeDir=dir;store.dasTimer=0;store.arrTimer=0;this.activeHorizontal=dir;}};
+    if(left.down)pressHorizontal('MOVE_LEFT',-1);if(right.down)pressHorizontal('MOVE_RIGHT',1);
+    if(left.up){store.inputState.left=false;if(store.activeDir===-1){store.activeDir=store.inputState.right?1:null;store.dasTimer=0;store.arrTimer=0;}}
+    if(right.up){store.inputState.right=false;if(store.activeDir===1){store.activeDir=store.inputState.left?-1:null;store.dasTimer=0;store.arrTimer=0;}}
+    if(down.down){telemetry.physical('gamepad',{type:'buttondown',action:'SOFT_DROP_START'});dispatchAction('SOFT_DROP_START','human','gamepad');this.downHeld=true;}
+    if(down.up&&this.downHeld){if(canAcceptGameplayAction())dispatchAction('SOFT_DROP_END','human','gamepad');this.downHeld=false;}
+    if(rotate.down){telemetry.physical('gamepad',{type:'buttondown',action:'ROTATE_CW'});dispatchAction('ROTATE_CW','human','gamepad');}
+    if(drop.down){telemetry.physical('gamepad',{type:'buttondown',action:'HARD_DROP'});dispatchAction('HARD_DROP','human','gamepad');}
+    if(hold.down){telemetry.physical('gamepad',{type:'buttondown',action:'HOLD'});dispatchAction('HOLD','human','gamepad');}
+    if(pause.down){telemetry.physical('gamepad',{type:'buttondown',action:store.paused?'RESUME':'PAUSE'});dispatchAction(store.paused?'RESUME':'PAUSE','human','gamepad');}
+  },
+  reset(){this.prev={};this.activeHorizontal=null;this.downHeld=false;}
+};
+
+TouchInput.init();
+window.addEventListener('blur',()=>GamepadInput.reset());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')GamepadInput.reset();});
+document.getElementById('touchModeBtn').addEventListener('click',()=>TouchInput.toggle());
+for(const id of ['trophiesBtn','startModalTrophiesBtn'])document.getElementById(id).addEventListener('click',()=>{TrophySystem.render();UI.ModalManager.show('trophiesModal');});
+document.getElementById('trophiesCloseBtn').addEventListener('click',()=>UI.ModalManager.hide('trophiesModal'));
+for(const id of ['codeLensBtn','startModalCodeLensBtn'])document.getElementById(id).addEventListener('click',()=>CodeLens.open());
+document.getElementById('codeLensRefreshBtn').addEventListener('click',()=>CodeLens.render());
+document.getElementById('codeLensCloseBtn').addEventListener('click',()=>UI.ModalManager.hide('codeLensModal'));
 
 // CSV and Replay Exports
 document.getElementById('inspectRecoveryBtn').addEventListener('click',()=>{UI.ModalManager.hide('startModal');document.getElementById('recoveryDetails').open=true;ClassroomStorage.renderRecovery();document.querySelector('#recoveryDetails summary').focus();});
